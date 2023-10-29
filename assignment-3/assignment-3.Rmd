@@ -46,11 +46,6 @@ library(data.table)
 library(tidyverse)
 ```
 
-Set your working directory
-```{r set-directory, include=TRUE}
-setwd("~/Documents/R/ggis-224/assignment-3")
-```
-
 
 ## Clean and Wrangle Data
 
