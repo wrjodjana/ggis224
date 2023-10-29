@@ -47,20 +47,22 @@ library(tidyverse)
 ```
 
 
-## Clean and Wrangle Data
+## Los Angeles
+
+### Clean and Wrangle Data
 
 Load Data
 ```{r load-data, include=TRUE}
 LAcrime <- fread("LA-data/LAPD2015_Violent.csv")
-NYCcrime <- fread("NYC-data/NYPD2015_Violent.csv")
-```
 
-## Los Angeles
+head(LAcrime)
+```
 
 Unique Code
 ```{r unique-code, include=TRUE}
 unique(LAcrime$`Crime Code Description`)
 ```
+
 Subset Data
 ```{r subset-data, include=TRUE}
 LAcrime.df <- as.data.frame(LAcrime)
@@ -75,18 +77,20 @@ Saved Cleaned Data
 write.csv(LAcrime.hom,"LAcrime_hom.csv")
 ```
 
-## Convert CSV to Points
+### Convert CSV to Points
 
 Identify X,Y Locations
 ```{r xy-locations, include=TRUE}
 glimpse(LAcrime.hom[,c("longitude","latitude")])
 ```
+
 Check long/lat structure
 ```{r long-lat-str, include-TRUE}
 str(LAcrime.hom[,c("longitude", "latitude")])
 LAcrime.hom$latitude <- as.numeric(LAcrime.hom$latitude)
 LAcrime.hom$longitude <- as.numeric(LAcrime.hom$longitude)
 ```
+
 ID Missing Data
 ```{r missing-data, include=TRUE}
 LAcrime.hom.na <- subset(LAcrime.hom, is.na(LAcrime.hom[,c("longitude", "latitude")]))
@@ -105,7 +109,7 @@ Convert & Inspect
 LAcrime.pts <- st_as_sf(LAcrime.hom2, coords = c("longitude","latitude"), crs = 4326)
 plot(LAcrime.pts)
 ```
-## Standardize CRS
+### Standardize CRS
 
 Load & Inspect
 ```{r load-inspect, include=TRUE}
@@ -113,6 +117,7 @@ LAcrimes <- LAcrime.pts
 LAtracts <- st_read("LA-data/LAC_Shape.shp")
 
 ```
+
 Overlay Points & Polygons
 ```{r points-polygons, include=TRUE}
 ## 1st layer (gets plotted first)
@@ -121,24 +126,27 @@ tm_shape(LAtracts) + tm_borders(alpha = 0.4) +
   ## 2nd layer (overlay)
   tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col="red") 
 ```
+
 Transform CRS
 ```{r transform-crs, include=TRUE}
 CRS.new <- st_crs(LAtracts)
 LAcrimes <- st_transform(LAcrimes, CRS.new)
 ```
 
-## Point-in-Polygon
+### Point-in-Polygon (PIP)
 
 Spatial Join
 ```{r spatial-join, include=TRUE}
 crime_in_tract <- st_join(LAcrimes, LAtracts, join = st_within)
 glimpse(crime_in_tract)
 ```
+
 Count Crimes Per Tract
 ```{r crimes-per-tract, include=TRUE}
 crime_tract_count <- as.data.frame(table(crime_in_tract$TRACTCE10))
 glimpse(crime_tract_count)
 ```
+
 Rename Column Names
 ```{r rename-columns, include=TRUE}
 names(crime_tract_count) <- c("TRACTCE10","CrimeCt")
@@ -152,13 +160,128 @@ LAtracts_new <- merge(LAtracts, crime_tract_count, by="TRACTCE10")
 glimpse(LAtracts_new)
 
 ```
-## Conclusions
+### Conclusions
 
 Visualize Output
 ```{r visualize-output, include=TRUE}
 tmap_mode("view")
 tm_shape(LAtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="LA Homicides in 2015")
 ```
+
+
+## New York
+
+### Clean and Wrangle Data
+
+Load data
+```{r load-dataNY, include=FALSE}
+NYcrime <- fread("NYC-data/NYPD2015_Violent.csv")
+
+head(NYcrime)
+```
+
+Unique Code
+```{r unique-codeNY, include=TRUE}
+unique(NYcrime$`OFNS_DESC`)
+```
+
+Subset Data
+```{r subsetNY, include=TRUE}
+NYcrime.hom <- NYcrime %>%
+  filter(`OFNS_DESC` == "HOMICIDE-NEGLIGENT-VEHICLE" | `OFNS_DESC` == "MURDER & NON-NEGL. MANSLAUGHTER")
+
+head(NYcrime.hom)
+```
+Saved Cleaned Data
+```{r save-dataNY, include=TRUE}
+write.csv(NYcrime.hom, "NYcrime_hom.csv")
+```
+
+### Convert CSV to Points
+
+Identify X,Y Locations
+```{r xy-locationsNY, include=TRUE}
+glimpse(NYcrime.hom[,c("Longitude","Latitude")])
+```
+
+Check Long/Lat Structure
+```{r long-latNY, include=TRUE}
+str(NYcrime.hom[,c("Longitude", "Latitude")])
+NYcrime.hom$Latitude <- as.numeric(NYcrime.hom$Latitude)
+NYcrime.hom$Longitude <- as.numeric(NYcrime.hom$Longitude)
+```
+Remove Missing Values
+```{r missing-valuesNY, include=TRUE}
+NYcrime.hom2 <- na.omit(NYcrime.hom[,c("CMPLNT_NUM","Longitude", "Latitude")])
+str(NYcrime.hom2)
+```
+
+Convert & Inspect
+```{r convert-inspectNY, include=TRUE}
+NYcrime.pts <- st_as_sf(NYcrime.hom2, coords = c("Longitude","Latitude"), crs = 4326)
+plot(NYcrime.pts)
+```
+### Standardize CRS
+
+Load & Inspect
+```{r load-inspectNY, include=TRUE}
+NYcrimes <- NYcrime.pts
+NYtracts <- st_read("NYC-data/NYC_Shape.shp")
+
+```
+Overlay Points & Polygons
+```{r points-polygonsNY, include=TRUE}
+## 1st layer (gets plotted first)
+tm_shape(NYtracts) + tm_borders(alpha = 0.4) + 
+  
+  ## 2nd layer (overlay)
+  tm_shape(NYcrime.pts) + tm_dots(size = 0.1, col="blue") 
+```
+Transform CRS
+```{r transform-crsNY, include=TRUE}
+CRS.new <- st_crs(NYtracts)
+NYcrimes <- st_transform(NYcrimes, CRS.new)
+```
+
+### Point-in-Polygon (PIP)
+
+Spatial Join
+```{r spatial-joinNY, include=TRUE}
+crime_in_tractNY <- st_join(NYcrimes, NYtracts, join = st_within)
+glimpse(crime_in_tractNY)
+```
+
+Count Crimes Per Tract
+```{r crimes-per-tractNY, include=TRUE}
+crime_tract_countNY <- as.data.frame(table(crime_in_tractNY$tractce))
+glimpse(crime_tract_countNY)
+```
+
+Rename Column Names
+```{r rename-columnsNY, include=TRUE}
+names(crime_tract_countNY) <- c("tractce","CrimeCt")
+glimpse(crime_tract_countNY)
+
+```
+
+Merge Data
+```{r merge-dataNY, include=TRUE}
+NYtracts_new <- merge(NYtracts, crime_tract_countNY, by="tractce")
+glimpse(NYtracts_new)
+
+```
+
+### Conclusions
+
+Visualize Output
+```{r visualize-output, include=TRUE}
+tmap_mode("view")
+tm_shape(NYtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="NY Homicides in 2015")
+```
+
+
+
+
 
 
 
