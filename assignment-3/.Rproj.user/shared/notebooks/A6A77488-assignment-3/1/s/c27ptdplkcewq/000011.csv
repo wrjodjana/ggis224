@@ -1,0 +1,5 @@
+"0","LAcrime.df <- as.data.frame(LAcrime)"
+"0","s1 <- subset(LAcrime.df, LAcrime.df$`Crime Code Description`==""CRIMINAL HOMICIDE"") # base r subset"
+"0","LAcrime.hom <- rbind(s1)"
+"0",""
+"0","head(s1)"

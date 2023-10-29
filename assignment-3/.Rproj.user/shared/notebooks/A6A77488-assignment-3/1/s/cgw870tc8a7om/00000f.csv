@@ -1,0 +1,2 @@
+"0","LAcrime <- fread(""LA-data/LAPD2015_Violent.csv"")"
+"0","NYC_crime <- fread(""NYC-data/NYPD2015_Violent.csv"")"

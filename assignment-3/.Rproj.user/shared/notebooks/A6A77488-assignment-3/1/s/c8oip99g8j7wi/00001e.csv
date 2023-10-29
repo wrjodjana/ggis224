@@ -1,0 +1,2 @@
+"0","LAcrime.pts <- st_as_sf(LAcrime.hom2, coords = c(""longitude"",""latitude""), crs = 4326)"
+"0","plot(LAcrime.pts)"

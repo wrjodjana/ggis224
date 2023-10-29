@@ -1,0 +1,169 @@
+---
+title: "Assignment 3"
+author: "Warren Jodjana"
+date: "2023-10-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Introduction
+
+Unfortunately, Homicides remain a large issue at hand in large cities all over the world. In this lab, I'm going to be investigating homicides by tracts in two large cities, Los Angeles and New York. In the urban fabric of major cities like these two, incidents of homicides are often not evenly distributed but are clustered in specific areas due to specific socio-economic, environmental and cultural factors. Understanding these spatial distribution can directly influence public safety initiatives and can help for resource allocation for law enforcement and community-based intervention. Both New York and Los Angeles have unique urban histories, patterns of urban development and socio-cultural changes.By analyzing the distribution of homicides in specific tracts, I aim to investigate distinct spatial patterns that might shed light on the underlying causes and potential strategies for mitigation.
+
+## Methods
+
+
+
+Include: Year of Information, where Data is Sourced [use hyperlinks]
+
+## Data Standardization
+
+
+process of filtering
+
+## Spatial Data Operations
+
+process of spatial join
+
+## Maps
+
+## Discussion
+
+
+# Environment Setup
+
+Load Libraries
+```{r load-libraries, message=FALSE, include=TRUE}
+library(sf)
+library(tmap)
+library(leaflet)
+library(data.table)
+library(tidyverse)
+```
+
+Set your working directory
+```{r set-directory, include=TRUE}
+setwd("~/Documents/R/ggis-224/assignment-3")
+```
+
+
+## Clean and Wrangle Data
+
+Load Data
+```{r load-data, include=TRUE}
+LAcrime <- fread("LA-data/LAPD2015_Violent.csv")
+NYCcrime <- fread("NYC-data/NYPD2015_Violent.csv")
+```
+
+## Los Angeles
+
+Unique Code
+```{r unique-code, include=TRUE}
+unique(LAcrime$`Crime Code Description`)
+```
+Subset Data
+```{r subset-data, include=TRUE}
+LAcrime.df <- as.data.frame(LAcrime)
+s1 <- subset(LAcrime.df, LAcrime.df$`Crime Code Description`=="CRIMINAL HOMICIDE") # base r subset
+LAcrime.hom <- rbind(s1)
+
+head(s1)
+```
+
+Saved Cleaned Data
+```{r save-data, include=TRUE}
+write.csv(LAcrime.hom,"LAcrime_hom.csv")
+```
+
+## Convert CSV to Points
+
+Identify X,Y Locations
+```{r xy-locations, include=TRUE}
+glimpse(LAcrime.hom[,c("longitude","latitude")])
+```
+Check long/lat structure
+```{r long-lat-str, include-TRUE}
+str(LAcrime.hom[,c("longitude", "latitude")])
+LAcrime.hom$latitude <- as.numeric(LAcrime.hom$latitude)
+LAcrime.hom$longitude <- as.numeric(LAcrime.hom$longitude)
+```
+ID Missing Data
+```{r missing-data, include=TRUE}
+LAcrime.hom.na <- subset(LAcrime.hom, is.na(LAcrime.hom[,c("longitude", "latitude")]))
+
+glimpse(LAcrime.hom.na) # observations
+```
+
+Remove Missing Values
+```{r missing-values, include=TRUE}
+LAcrime.hom2 <- na.omit(LAcrime.hom[,c("DR Number","longitude", "latitude")])
+str(LAcrime.hom2)
+```
+
+Convert & Inspect
+```{r convert-inspect, include=TRUE}
+LAcrime.pts <- st_as_sf(LAcrime.hom2, coords = c("longitude","latitude"), crs = 4326)
+plot(LAcrime.pts)
+```
+## Standardize CRS
+
+Load & Inspect
+```{r load-inspect, include=TRUE}
+LAcrimes <- LAcrime.pts
+LAtracts <- st_read("LA-data/LAC_Shape.shp")
+
+```
+Overlay Points & Polygons
+```{r points-polygons, include=TRUE}
+## 1st layer (gets plotted first)
+tm_shape(LAtracts) + tm_borders(alpha = 0.4) + 
+  
+  ## 2nd layer (overlay)
+  tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col="red") 
+```
+Transform CRS
+```{r transform-crs, include=TRUE}
+CRS.new <- st_crs(LAtracts)
+LAcrimes <- st_transform(LAcrimes, CRS.new)
+```
+
+## Point-in-Polygon
+
+Spatial Join
+```{r spatial-join, include=TRUE}
+crime_in_tract <- st_join(LAcrimes, LAtracts, join = st_within)
+glimpse(crime_in_tract)
+```
+Count Crimes Per Tract
+```{r crimes-per-tract, include=TRUE}
+crime_tract_count <- as.data.frame(table(crime_in_tract$TRACTCE10))
+glimpse(crime_tract_count)
+```
+Rename Column Names
+```{r rename-columns, include=TRUE}
+names(crime_tract_count) <- c("TRACTCE10","CrimeCt")
+glimpse(crime_tract_count)
+
+```
+
+Merge Data
+```{r merge-data, include=TRUE}
+LAtracts_new <- merge(LAtracts, crime_tract_count, by="TRACTCE10")
+glimpse(LAtracts_new)
+
+```
+## Conclusions
+
+Visualize Output
+```{r visualize-output, include=TRUE}
+tmap_mode("view")
+tm_shape(LAtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="LA Homicides in 2015")
+```
+
+
+

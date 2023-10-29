@@ -1,0 +1,5 @@
+"0","## 1st layer (gets plotted first)"
+"0","tm_shape(LAtracts) + tm_borders(alpha = 0.4) + "
+"0","  "
+"0","  ## 2nd layer (overlay)"
+"0","  tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col=""red"") "

@@ -1,0 +1,4 @@
+"0","tmap_mode(""view"")"
+"2","tmap mode set to interactive viewing
+"
+"0","tm_shape(LAtracts_new) + tm_fill(""CrimeCt"", n=4, pal = ""BuPu"", title=""LA Homicides in 2015"")"

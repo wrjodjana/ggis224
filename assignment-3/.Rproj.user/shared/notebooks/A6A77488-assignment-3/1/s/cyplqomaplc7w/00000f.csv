@@ -1,0 +1,42 @@
+"0","LAcrime.hom.na <- subset(LAcrime.hom, is.na(LAcrime.hom[,c(""longitude"", ""latitude"")]))"
+"0",""
+"0","glimpse(LAcrime.hom.na) # observations"
+"1","Rows: 1"
+"1",""
+"1","
+"
+"1","Columns: 28"
+"1",""
+"1","
+"
+"1","$ `DR Number`              [3m[38;5;246m<int>[39m[23m 151716991
+$ `Date Reported`          [3m[38;5;246m<chr>[39m[23m ""10/4/15""
+$ `Date Occurred`          [3m[38;5;246m<chr>[39m[23m ""10/4/15""
+$ `Time Occurred`          [3m[38;5;246m<int>[39m[23m 2100
+$ `Area ID`                [3m[38;5;246m<int>[39m[23m 17
+$ `Area Name`              [3m[38;5;246m<chr>[39m[23m ""Devonshire""
+$ `Reporting District`     [3m[38;5;246m<int>[39m[23m 1796
+$ `Crime Code`             [3m[38;5;246m<int>[39m[23m 110
+$ `Crime Code Description` [3m[38;5;246m<chr>[39m[23m ""CRIMINAL HOMICIDE""
+$ `MO Codes`               [3m[38;5;246m<chr>[39m[23m ""1309 0554 0416 1402""
+$ `Victim Age`             [3m[38;5;246m<int>[39m[23m 35
+$ `Victim Sex`             [3m[38;5;246m<chr>[39m[23m ""M""
+$ `Victim Descent`         [3m[38;5;246m<chr>[39m[23m ""B""
+$ `Premise Code`           [3m[38;5;246m<int>[39m[23m 101
+$ `Premise Description`    [3m[38;5;246m<chr>[39m[23m ""STREET""
+$ `Weapon Used Code`       [3m[38;5;246m<int>[39m[23m 307
+$ `Weapon Description`     [3m[38;5;246m<chr>[39m[23m ""VEHICLE""
+$ `Status Code`            [3m[38;5;246m<chr>[39m[23m ""AA""
+$ `Status Description`     [3m[38;5;246m<chr>[39m[23m ""Adult Arrest""
+$ `Crime Code 1`           [3m[38;5;246m<int>[39m[23m 110
+$ `Crime Code 2`           [3m[38;5;246m<int>[39m[23m 998
+$ `Crime Code 3`           [3m[38;5;246m<int>[39m[23m NA
+$ `Crime Code 4`           [3m[38;5;246m<int>[39m[23m NA
+$ Address                  [3m[38;5;246m<chr>[39m[23m ""16900    NAPA                         ST""
+$ `Cross Street`           [3m[38;5;246m<chr>[39m[23m """"
+$ location                 [3m[38;5;246m<chr>[39m[23m ""34.2267, -118.5""
+$ latitude                 [3m[38;5;246m<dbl>[39m[23m 34.2267
+$ longitude                [3m[38;5;246m<dbl>[39m[23m NA"
+"1",""
+"1","
+"
