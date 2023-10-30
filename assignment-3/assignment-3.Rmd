@@ -17,25 +17,46 @@ Unfortunately, Homicides remain a large issue at hand in large cities all over t
 
 ## Methods
 
+My analysis started with obtaining and cleaning spatial data for both LA and NYC. The crime data comes from [Los Angeles Open Data Portal](https://data.lacity.org/Public-Safety/Crime-Data-from-2010-to-2019/63jg-8b9z) and [New York Open Data Portal](https://data.cityofnewyork.us/Public-Safety/NYC-crime/qb7u-rbmr/data). The tract data of Los Angeles comes from [City of Los Angeles Hub](https://geohub.lacity.org/search?collection=Dataset&q=Census%20Tracts) and the tract data of New York comes from [NYC Open Data](https://data.cityofnewyork.us/City-Government/2010-Census-Tracts/fxpq-c8ku). In the lab, all crime data is taken from 2015. Once preprocessed, a point-in-polygon (PIP) operation was employed, spatially joining the locations of individual homicide incidents with their corresponding tracts. Challenges encountered included missing data and differing coordinate reference systems (CRS) between the datasets. 
 
-
-Include: Year of Information, where Data is Sourced [use hyperlinks]
 
 ## Data Standardization
 
-
-process of filtering
+Before the spatial analysis could take place, it was necessary to ensure that the datasets were clean and standardized. Firstly, the datasets for NY and LA were filtered to only include homicides from the year 2015. For Los Angeles, it was to filter out "CRIMINAL HOMICIDE" from the dataset. While for New York, it was to filter out both "HOMICIDE-NEGLIGENT-VEHICLE" and "MURDER & NON-NEGL. MANSLAUGHTER", since their both considered homicides. Next, I handled any rows with missing or invalid (NA) latitude and longitude values and removed them. This is to ensure that all remaining data points can be mapped accurately. Then, I subset all the relevant columns including the unique crime identifier and the coordinates to use for analysis. Finally, I ensured that the latitude and longitude values were converted to numeric. Non-numeric coordinates can cause errors in mapping and spatial analysis.
 
 ## Spatial Data Operations
 
-process of spatial join
+The operation used here for spatial data analysis is the point-in-polygon (PIP) method. The PIP method identifies which tracts (polygons) each homicide (point) belongs to. This allows for aggregation of crimes at tract level, effectively associating each tract with a count of homicides. Firstly, the datasets were converted from tabular (CSV) form to spatial point datasets. Then, to make sure that the points and polygons align properly, I transformed both datasets to the same CRS (4326). Then, perform the PIP operation by using spatial join, linking each point to the polygon area it resides. Next, aggregate each homicides by each tract to show the number of homocides within each tract were tallied. Finally, merge all data to showcase a visualization or map.
+
+
 
 ## Maps
+
+### Los Angeles Points and Polygons
+```{r LApts-polygons, include=TRUE}
+## 1st layer (gets plotted first)
+tm_shape(LAtracts) + tm_borders(alpha = 0.4) + 
+  
+  ## 2nd layer (overlay)
+  tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col="red") 
+```
+
+
+### Los Angeles Homicides by Tract
+
+
+### New York Points and Polgyons
+
+
+### New York Points and Polygons
+
+
+
 
 ## Discussion
 
 
-# Environment Setup
+## Environment Setup
 
 Load Libraries
 ```{r load-libraries, message=FALSE, include=TRUE}
@@ -164,7 +185,6 @@ glimpse(LAtracts_new)
 
 Visualize Output
 ```{r visualize-output, include=TRUE}
-tmap_mode("view")
 tm_shape(LAtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="LA Homicides in 2015")
 ```
 
@@ -274,8 +294,7 @@ glimpse(NYtracts_new)
 ### Conclusions
 
 Visualize Output
-```{r visualize-output, include=TRUE}
-tmap_mode("view")
+```{r visualize-outputNY, include=TRUE}
 tm_shape(NYtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="NY Homicides in 2015")
 ```
 
