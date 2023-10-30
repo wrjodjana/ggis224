@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-Unfortunately, Homicides remain a large issue at hand in large cities all over the world. In this lab, I'm going to be investigating homicides by tracts in two large cities, Los Angeles and New York. In the urban fabric of major cities like these two, incidents of homicides are often not evenly distributed but are clustered in specific areas due to specific socio-economic, environmental and cultural factors. Understanding these spatial distribution can directly influence public safety initiatives and can help for resource allocation for law enforcement and community-based intervention. Both New York and Los Angeles have unique urban histories, patterns of urban development and socio-cultural changes.By analyzing the distribution of homicides in specific tracts, I aim to investigate distinct spatial patterns that might shed light on the underlying causes and potential strategies for mitigation.
+Unfortunately, Homicides remain a large issue at hand in large cities all over the world. In this lab, I'm going to be investigating homicides by tracts in two large cities, Los Angeles and New York. In these two cities, incidents of homicides are often not evenly distributed but are clustered in specific areas due to specific socio-economic, environmental and cultural factors. Understanding these spatial distribution can directly influence public safety initiatives and can help for resource allocation for law enforcement and community-based intervention. Both New York and Los Angeles have unique urban histories, patterns of urban development and socio-cultural changes.By analyzing the distribution of homicides in specific tracts, I aim to investigate distinct spatial patterns that might provide information on the underlying causes and potential strategies for mitigation.
 
 ## Methods
 
@@ -30,36 +30,8 @@ The operation used here for spatial data analysis is the point-in-polygon (PIP) 
 
 
 
-## Maps
 
-### Los Angeles Points and Polygons
-```{r LApts-polygons, include=TRUE}
-## 1st layer (gets plotted first)
-tm_shape(LAtracts) + tm_borders(alpha = 0.4) + 
-  
-  ## 2nd layer (overlay)
-  tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col="red") 
-```
-
-
-### Los Angeles Homicides by Tract
-
-
-### New York Points and Polgyons
-
-
-### New York Points and Polygons
-
-
-
-
-## Discussion
-
-
-## Environment Setup
-
-Load Libraries
-```{r load-libraries, message=FALSE, include=TRUE}
+```{r load-libraries, message=FALSE, include=FALSE}
 library(sf)
 library(tmap)
 library(leaflet)
@@ -68,24 +40,23 @@ library(tidyverse)
 ```
 
 
-## Los Angeles
 
-### Clean and Wrangle Data
+## Los Angeles Maps
 
-Load Data
-```{r load-data, include=TRUE}
+
+```{r load-data, include=FALSE}
 LAcrime <- fread("LA-data/LAPD2015_Violent.csv")
 
 head(LAcrime)
 ```
 
-Unique Code
-```{r unique-code, include=TRUE}
+
+```{r unique-code, include=FALSE}
 unique(LAcrime$`Crime Code Description`)
 ```
 
-Subset Data
-```{r subset-data, include=TRUE}
+
+```{r subset-data, include=FALSE}
 LAcrime.df <- as.data.frame(LAcrime)
 s1 <- subset(LAcrime.df, LAcrime.df$`Crime Code Description`=="CRIMINAL HOMICIDE") # base r subset
 LAcrime.hom <- rbind(s1)
@@ -93,210 +64,262 @@ LAcrime.hom <- rbind(s1)
 head(s1)
 ```
 
-Saved Cleaned Data
-```{r save-data, include=TRUE}
+
+```{r save-data, include=FALSE}
 write.csv(LAcrime.hom,"LAcrime_hom.csv")
 ```
 
-### Convert CSV to Points
 
-Identify X,Y Locations
-```{r xy-locations, include=TRUE}
+```{r xy-locations, include=FALSE}
 glimpse(LAcrime.hom[,c("longitude","latitude")])
 ```
 
-Check long/lat structure
-```{r long-lat-str, include-TRUE}
+
+```{r long-lat-str, include=FALSE}
 str(LAcrime.hom[,c("longitude", "latitude")])
 LAcrime.hom$latitude <- as.numeric(LAcrime.hom$latitude)
 LAcrime.hom$longitude <- as.numeric(LAcrime.hom$longitude)
 ```
 
-ID Missing Data
-```{r missing-data, include=TRUE}
+
+```{r missing-data, include=FALSE}
 LAcrime.hom.na <- subset(LAcrime.hom, is.na(LAcrime.hom[,c("longitude", "latitude")]))
 
 glimpse(LAcrime.hom.na) # observations
 ```
 
-Remove Missing Values
-```{r missing-values, include=TRUE}
+
+```{r missing-values, include=FALSE}
 LAcrime.hom2 <- na.omit(LAcrime.hom[,c("DR Number","longitude", "latitude")])
 str(LAcrime.hom2)
 ```
 
-Convert & Inspect
-```{r convert-inspect, include=TRUE}
+
+```{r convert-inspect, include=FALSE}
 LAcrime.pts <- st_as_sf(LAcrime.hom2, coords = c("longitude","latitude"), crs = 4326)
 plot(LAcrime.pts)
 ```
-### Standardize CRS
 
-Load & Inspect
-```{r load-inspect, include=TRUE}
+
+
+```{r load-inspect, include=FALSE}
 LAcrimes <- LAcrime.pts
 LAtracts <- st_read("LA-data/LAC_Shape.shp")
 
 ```
 
-Overlay Points & Polygons
-```{r points-polygons, include=TRUE}
+### Los Angeles Homicides per Tract
+
+```{r points-polygons, include=TRUE, warning=FALSE, echo=FALSE, message=FALSE}
+tmap_mode("plot")
 ## 1st layer (gets plotted first)
-tm_shape(LAtracts) + tm_borders(alpha = 0.4) + 
+LAptspolygons <- tm_shape(LAtracts) + tm_borders(alpha = 0.4) + 
   
   ## 2nd layer (overlay)
-  tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col="red") 
+  tm_shape(LAcrime.pts) + tm_dots(size = 0.1, col="red") +
+  
+  ## add title
+  tm_layout(title="Los Angeles Points and Polygons", 
+            title.size = 0.65, 
+            title.position=c("left", "bottom"), 
+            title.fontface = "bold") +
+  
+  # add scalebar
+  tm_scale_bar(breaks = c(0, 5, 10),  
+               text.size = 0.8,
+               width = 1,             # Adjusts the width of bar segments
+               position = c("left", "bottom"),
+               lwd = 1.5,             # Adjust line width for visibility
+               color.dark = "red",   # Change dark color
+               color.light = "lightcoral")  # Change light color
+
+LAptspolygons
 ```
 
-Transform CRS
-```{r transform-crs, include=TRUE}
+
+```{r transform-crs, include=FALSE}
 CRS.new <- st_crs(LAtracts)
 LAcrimes <- st_transform(LAcrimes, CRS.new)
 ```
 
-### Point-in-Polygon (PIP)
 
-Spatial Join
-```{r spatial-join, include=TRUE}
+```{r spatial-join, include=FALSE}
 crime_in_tract <- st_join(LAcrimes, LAtracts, join = st_within)
 glimpse(crime_in_tract)
 ```
 
-Count Crimes Per Tract
-```{r crimes-per-tract, include=TRUE}
+
+```{r crimes-per-tract, include=FALSE}
 crime_tract_count <- as.data.frame(table(crime_in_tract$TRACTCE10))
 glimpse(crime_tract_count)
 ```
 
-Rename Column Names
-```{r rename-columns, include=TRUE}
+
+```{r rename-columns, include=FALSE}
 names(crime_tract_count) <- c("TRACTCE10","CrimeCt")
 glimpse(crime_tract_count)
 
 ```
 
-Merge Data
-```{r merge-data, include=TRUE}
+
+```{r merge-data, include=FALSE}
 LAtracts_new <- merge(LAtracts, crime_tract_count, by="TRACTCE10")
 glimpse(LAtracts_new)
 
 ```
-### Conclusions
 
-Visualize Output
-```{r visualize-output, include=TRUE}
+
+
+### Visualize LA Homicides in 2015
+
+```{r visualize-output, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+tmap_mode("view")
 tm_shape(LAtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="LA Homicides in 2015")
 ```
 
 
-## New York
+## New York City
 
-### Clean and Wrangle Data
 
-Load data
+
 ```{r load-dataNY, include=FALSE}
 NYcrime <- fread("NYC-data/NYPD2015_Violent.csv")
 
 head(NYcrime)
 ```
 
-Unique Code
-```{r unique-codeNY, include=TRUE}
+
+```{r unique-codeNY, include=FALSE}
 unique(NYcrime$`OFNS_DESC`)
 ```
 
-Subset Data
-```{r subsetNY, include=TRUE}
+
+```{r subsetNY, include=FALSE}
 NYcrime.hom <- NYcrime %>%
   filter(`OFNS_DESC` == "HOMICIDE-NEGLIGENT-VEHICLE" | `OFNS_DESC` == "MURDER & NON-NEGL. MANSLAUGHTER")
 
 head(NYcrime.hom)
 ```
-Saved Cleaned Data
-```{r save-dataNY, include=TRUE}
+
+
+```{r save-dataNY, include=FALSE}
 write.csv(NYcrime.hom, "NYcrime_hom.csv")
 ```
 
-### Convert CSV to Points
 
-Identify X,Y Locations
-```{r xy-locationsNY, include=TRUE}
+```{r xy-locationsNY, include=FALSE}
 glimpse(NYcrime.hom[,c("Longitude","Latitude")])
 ```
 
-Check Long/Lat Structure
-```{r long-latNY, include=TRUE}
+
+```{r long-latNY, include=FALSE}
 str(NYcrime.hom[,c("Longitude", "Latitude")])
 NYcrime.hom$Latitude <- as.numeric(NYcrime.hom$Latitude)
 NYcrime.hom$Longitude <- as.numeric(NYcrime.hom$Longitude)
 ```
-Remove Missing Values
-```{r missing-valuesNY, include=TRUE}
+
+
+```{r missing-valuesNY, include=FALSE}
 NYcrime.hom2 <- na.omit(NYcrime.hom[,c("CMPLNT_NUM","Longitude", "Latitude")])
 str(NYcrime.hom2)
 ```
 
-Convert & Inspect
-```{r convert-inspectNY, include=TRUE}
+
+```{r convert-inspectNY, include=FALSE}
 NYcrime.pts <- st_as_sf(NYcrime.hom2, coords = c("Longitude","Latitude"), crs = 4326)
 plot(NYcrime.pts)
 ```
-### Standardize CRS
 
-Load & Inspect
-```{r load-inspectNY, include=TRUE}
+
+```{r load-inspectNY, include=FALSE}
 NYcrimes <- NYcrime.pts
 NYtracts <- st_read("NYC-data/NYC_Shape.shp")
 
 ```
-Overlay Points & Polygons
-```{r points-polygonsNY, include=TRUE}
-## 1st layer (gets plotted first)
-tm_shape(NYtracts) + tm_borders(alpha = 0.4) + 
+
+### New York City Homicides per Tract
+```{r points-polygonsNY, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+tmap_mode("plot")
+NYptspolygons <- tm_shape(NYtracts) + tm_borders(alpha = 0.4) + 
   
   ## 2nd layer (overlay)
-  tm_shape(NYcrime.pts) + tm_dots(size = 0.1, col="blue") 
+  tm_shape(NYcrime.pts) + tm_dots(size = 0.1, col="blue") +
+  
+  ## add title
+  tm_layout(title="New York City Points and Polygons", 
+            title.size = 0.75, 
+            title.position=c("left", "top"), 
+            title.fontface = "bold") +
+  
+  # add scalebar
+tm_scale_bar(breaks = c(0, 5, 10),  
+             width = 1,           # Adjusts the width of bar segments
+             position = c("left", "top"),  
+             text.size = 0.8,
+             lwd = 1.5,            # Adjust line width for visibility
+             color.dark = "blue",   # Change dark color
+             color.light = "lightblue")  # Change light color
+
+NYptspolygons
 ```
-Transform CRS
-```{r transform-crsNY, include=TRUE}
+
+
+```{r transform-crsNY, include=FALSE}
 CRS.new <- st_crs(NYtracts)
 NYcrimes <- st_transform(NYcrimes, CRS.new)
 ```
 
-### Point-in-Polygon (PIP)
 
-Spatial Join
-```{r spatial-joinNY, include=TRUE}
+```{r spatial-joinNY, include=FALSE}
 crime_in_tractNY <- st_join(NYcrimes, NYtracts, join = st_within)
 glimpse(crime_in_tractNY)
 ```
 
-Count Crimes Per Tract
-```{r crimes-per-tractNY, include=TRUE}
+
+
+```{r crimes-per-tractNY, include=FALSE}
 crime_tract_countNY <- as.data.frame(table(crime_in_tractNY$tractce))
 glimpse(crime_tract_countNY)
 ```
 
-Rename Column Names
-```{r rename-columnsNY, include=TRUE}
+
+```{r rename-columnsNY, include=FALSE}
 names(crime_tract_countNY) <- c("tractce","CrimeCt")
 glimpse(crime_tract_countNY)
 
 ```
 
-Merge Data
-```{r merge-dataNY, include=TRUE}
+
+```{r merge-dataNY, include=FALSE}
 NYtracts_new <- merge(NYtracts, crime_tract_countNY, by="tractce")
 glimpse(NYtracts_new)
 
 ```
 
-### Conclusions
 
-Visualize Output
-```{r visualize-outputNY, include=TRUE}
-tm_shape(NYtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="NY Homicides in 2015")
+### Visualize NYC Homicides in 2015
+```{r visualize-outputNY, include=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+tmap_mode("view")
+tm_shape(NYtracts_new) + tm_fill("CrimeCt", n=4, pal = "BuPu", title="NYC Homicides in 2015")
 ```
+
+## Discussion
+
+In New York City, the spatial distribution of homicide per tract is much more concentrated especially towards its more central and upper regions which represents Manhattan and its surrounding boroughs. This concentration is likely affected by high population density, socioeconomic conditions and nature of urban environments. Furthermore, Manhattan is considered to be a large CBD (Central Buisness District). This area is a magnet for commerce, entertainment, and residential luxury. While it's home to many wealthy individuals, it also attracts a daily influx of workers, tourists, and visitors from all over the world. In addition, the efficient public transport systems, which brings different groups of people into close proximity, might also increase these patterns. There is also a large concentration of homicides in the Bronx area, which might be tied to economic challenges, leading to poverty, unemployment, and limited access to essential services.The borough's unique urban environment, with a mix of residential housing projects, commercial corridors, and recreational areas, also plays a role in the increase of homicides.
+
+On the other hand, the spatial distribution of homicide per tract is more spread out in Los Angeles, where it's slightly more concentrated in the southern parts of the city. In contrast, central Los Angeles portrays a moderate distribution, indicating a more balanced homicide rate in the city. The sprawling nature of Los Angeles, with its extensive highway system and car-centric culture, means that people often traverse large distances, potentially leading to territorial disputes or gang-related activities. Furthermore, the city's approach to urban planning, with its sprawling neighborhoods, large commercial districts, and pockets of densely populated areas, can influence crime patterns. The connectivity provided by its advanced road network means that there's increased mobility, but it can also lead to isolated incidents in various parts of the city, rather than concentrated hotspots as seen in more compact urban settings.
+
+For future research, incorporating data related to socio-economic status, employment rates, education levels, and community engagement programs might provide more insights into the patterns. Additionally, examining the role of law enforcement presence, community policing, and surveillance in these areas could provide more information on the effectiveness of crime prevention strategies.
+
+
+
+
+
+
+
+
+
+
 
 
 
