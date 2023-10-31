@@ -1,0 +1,21 @@
+---
+title: "GGIS 224 Environmental Data Science Assignment 2"
+author: "Warren Jodjana"
+date: "2023-09-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{}
+
+
+
+```
+
+
+
+
+
