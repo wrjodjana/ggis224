@@ -1,0 +1,311 @@
+---
+title: "Assignment #1"
+author: "Warren Jodjana, Environmental Data Science @UIUC "
+date: "9/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+In this assignment, we'll explore a dataset of environmental features in the City of Chicago. Along the way, you'll hone in on key themes learned from the first three weeks of our class. You'll specifically review:
+
+- Data Inspection 
+- Basic Mapping in R
+- Attribute Queries
+- Aggregating Data
+
+You will be on your way to mastering the basics of `sf`, `tmap`, and basics of the `tidyverse`. It's helpful if you've read through Chapter 3 on *Attribute Data Operations* in our course textbook, [Geocomputation in R](https://geocompr.robinlovelace.net/). 
+
+This assignment uses the *Chives* dataset from [chichives.com](https://chichives.com). *ChiVes* is a collaborative project that integrates and visualizes data; a handful of key metrics―tree cover, air pollution estimates, heat island effects, traffic volumes, and social vulnerability index― help to reveal where in the city people face particular challenges as we work towards a healthier Chicago. You will need to review the [Data](https://chichives.com/data) page to understand the variable names and definitions to complete this assignment. 
+
+## Environment Setup
+
+Download and open the course files (including the **.geojson** file and this **RMarkdown** file) on your system, or RStudio Cloud environment. Open the RmD file in RStudio. If you haven't already, set your working directory. 
+
+```{r setwd}
+setwd("~/Documents/R/GGIS 224 (Environmental Data Science)/assignment-1")
+```
+
+Next, load up all the libraries needed for this assignment.
+
+```{r environment-setup, warning=FALSE, message=FALSE}
+library(sf)
+library(spData)
+library(tidyverse)
+library(tmap)
+```
+
+Now you're ready to load in the data. Make sure you've loaded the geojson in the same file directory as your RmD document.
+
+Use the `sf` library function `st_read` to read in the geojson file. This spatial dataset was downloaded directly from *Chives*.
+
+```{r data-load}
+chives <- st_read("chives-data.geojson")
+```
+
+---
+
+## Explore Data 
+
+Over the past few weeks, we've been reading about, coding through examples of, and practicing attribute data wrangling. First we need to inspect and examine the data carefully, looking for interesting trends. 
+
+Use the `head()` function to inspect the data. (Uncomment on your own machine.) There are many other functions to use, if you prefer, like `glimpse`.
+
+```{r head}
+head(chives)
+```
+
+How many census tracts do we have in this dataset? Use the `dim()` function to check. 
+```{r dim}
+dim(chives)
+```
+
+There are 801 rows, or census tracts, and 42 columns, or field attributes in this dataset.
+
+Let's quickly map an interesting variable in our dataset using `tmap`. We'll explore the `tree_crown_den` attribute, which shows us the proportion of a census tract covered by tree crowns, as measured from LiDar data in 2010. Review the *Chives* website to learn more about this variable. 
+
+In this map we'll use quantile breaks to classify the variable of interest; a red-yellow-green diverging color palette; and will also rename the variable in the legend for easier viewing.
+
+```{r quick-map}
+
+tm_shape(chives) + tm_fill("trees_crown_den", 
+                           style = "quantile", 
+                           palette = "RdYlGn",
+                           title = "Tree Coverage %")
+
+```
+
+Let's explore data breaks further. Here's one way of selecting all census tracts that have less than 10% of its area covered by trees:
+
+```{r subset-ex}
+fewTrees <- chives %>% 
+  filter(trees_crown_den < 10)
+
+head(fewTrees)
+```
+
+82 features were selected, meaning 82 out of all census tracts in the city have less than 10% of their areas covered by trees.
+
+### Question 1 
+
+What's another way to do this (ie. query your data)? Use a different selection option based on your readings and practice. The end output also identify tracts with less than 10% areas covered by trees. 
+
+```{r Question-1}
+
+fewTrees2 <- subset(chives, trees_crown_den < 10)
+
+head(fewTrees2)
+
+```
+
+---
+
+Let's quickly map these tracts to see where they show up. We place our original dataset, *chives*, as the first layer. We don't pass any parameters to the `tm_fill()` function to force a default gray background. Then we add the new filtered dataset, *fewTrees*, coloring it brown. 
+
+```{r fewTrees-map}
+tm_shape(chives) + tm_fill() + 
+  tm_shape(fewTrees) + tm_fill(col = "brown") 
+  
+```
+
+The subset of data that we have includes all of the original data. Let's map social vulnerability measures for the `fewTrees` dataset. Higher SVI indicates higher vulnerability.
+
+```{r fewTreesdata}
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(fewTrees) + tm_fill("svi_pecentile") 
+  
+```
+
+Let's say we want to identify some key characteristics of areas without too many trees in the city. Using our same filter above (or whatever version you'd like to use), we can add an additional option. In the example below, we select all areas with <10% tree crown density that have high social vulnerability (ie. the social vulnerability index percentile is above 60%). Then, we map it.
+
+```{r queryData}
+fewTreesSVI <- chives %>% 
+  filter(trees_crown_den < 10 & svi_pecentile > 60)
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(fewTreesSVI) + tm_fill(col = "brown") 
+  
+```
+
+### Question 2
+
+We can see that several tracts could be found in areas with fewer trees, and higher social vulnerability. Explore another paired query, choosing a new variable (instead of social vulnerability). You can explore the data on your own, read the metadata further on the original data website, etc. to identify a reasonable cutoff.
+
+Generate and run the query (with 2 criteria).
+
+```{r Question-2 asthma_adj_rate}
+
+# Trees area (trees_area) and prevalence of asthma (asthma_age_adj_rate)
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(fewTrees) + tm_fill("asthma_age_adj_rate") 
+
+```
+```{r Question-2 trees_area}
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(fewTrees) + tm_fill("trees_area") 
+
+```
+
+```{r Question-2 high Asthma}
+
+highAsthma <- chives %>%
+  filter(asthma_age_adj_rate > 150) 
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(highAsthma) + tm_fill(col = "blue") 
+
+```
+```{r Question-2 Low Tree Area}
+
+lowTreeArea <- chives %>%
+  filter(trees_area < 200000) 
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(lowTreeArea) + tm_fill(col = "black") 
+
+```
+
+```{r Question-2 other}
+lowTreeAreaAsthma <- chives %>%
+  filter(trees_area < 200000 & asthma_age_adj_rate > 150) 
+
+tm_shape(chives) + tm_fill() + 
+  tm_shape(lowTreeAreaAsthma) + tm_fill(col = "brown") 
+```
+
+
+### Question 3
+
+Explain why you selected this query, and  briefly describe any interesting patterns you discovered.
+
+The reason why i selected these two queries was because I was always curious whether or not asthma or any lung disease would be affected by the amount of trees in a particular area. Since we already used the "trees_crown_den" key in the example, I decided on using the "trees_area" key and compared it with the asthma age adjusted rate (asthma_age_adj_rate). 
+
+The intervals were based on my own hypothesis that areas with fewer trees result in higher asthma rates due to the potential for reduced air quality and limited green spaces for physical activity, which may contribute to respiratory health issues. Hence, I used the intervals based on the middle cutoff of 200,000 for the "trees_area" key and 200 for the "asthma_age_adj_rate", which is why I had to plot both keys without the filters.
+
+Some of the patterns I found were that there was a negative correlation between the two queries, which is that areas with fewer trees resulted in higher asthma age adjusted rate. Hence my hypothesis was indeed correct.This could be due to several factors, including reduced air quality, limited green spaces, and potentially increased exposure to pollution in these areas. Areas around the center and north of Chicago also had high asthma rates, while areas with low amounts of trees was in all parts of Chicago. This could be because Chicago is mostly a metropolitan area (urban) so urban areas often have fewer trees and pollution sources, while suburban areas tend to have more green spaces. Areas around the center and north of Chicago might have high asthma rates because of industrial zones, traffic congestion or other socioeconomic factors.
+
+---
+
+Let's take data wrangling a bit further and start to aggregate our dataset. We will use `group_by` and `summarise` functions from the `tidyverse` library we're using. (Technically, they're from the `dplyr` package within the `tidyverse`.) 
+
+`Group_by` tells the code which variable we should aggregate on. For example, let's say we want to know how many trees exist in each community area in Chicago. We'll (1) `group_by` the "community" field and (2) `summarise` using the total sum of trees. We'll assign the total number of trees to equal a new variable, called "Trees". We may also want to know how many tracts are included in each community, so are interested the total `n` of tracts. The code looks like this:
+
+```{r groupComTree}
+treeCom <- chives %>% 
+  group_by(community) %>%
+  summarize(Trees = sum(trees_n),
+            TotTracts = n())
+
+head(treeCom)
+```
+
+And we can map it!
+
+```{r mapComTree}
+tm_shape(treeCom) + tm_fill(col = "Trees")
+```
+
+Note that this dataset no longer shows tracts, since we're actually working with *communities*. You can check the dimension of this data frame to be sure: 
+
+```{r dimComTree}
+dim(treeCom)  
+```
+
+### Question 4
+
+Take this aggregation further. Add more to the code chunk above to generate a community area dataset that includes **at least five variables of interest**. Note that some variables you'll need to sum (like total number of trees), whereas others will need to be averaged. You should use the variables included in the original *Chives* dataset.
+
+Your code should also output a table view of the data.
+
+```{r Question-4}
+treeCom2 <- chives %>% 
+  group_by(community) %>%
+  summarize(Trees = sum(trees_n, na.rm = TRUE),
+            TotTracts = n(),
+            AvgAsthmaRate = mean(asthma_age_adj_rate, na.rm = TRUE),
+            AvgNDVI = mean(ndvi, na.rm = TRUE),
+            AvgPopulation = mean(acs_population, na.rm = TRUE),
+            AvgHardship = mean(hardship, na.rm = TRUE)
+            )
+  
+head(treeCom2)
+  
+
+```
+
+**Pro Tip:** If there are null or NA variables in the census tracts, you won't get a mean value in aggregate. To force an average when some areas may have values (and others remain NA/excluded) add  `na.rm = TRUE`. For example: `mean(trees, na.rm=TRUE)`.
+
+### Question 5
+
+Generate three maps of three different variables at the community area level using `tmap`. You may get bonus points (up to 5pts total) for going above and beyond in working with thoughtful `tmap` parameters! Review the in-class tutorial from our first week for more ideas, and/or explore the online textbook we use for more ideas. 
+
+```{r Question-5}
+
+# Map 1 (AvgHardship)
+map1 <- tm_shape(treeCom2) +
+  tm_fill(col = "AvgHardship", style = "quantile") + 
+  tm_borders(col = "gray", lwd = 0.5) + 
+  tm_legend(outside = TRUE) +
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_layout(
+    title = "Average Hardship by Community Area in Chicago",
+    legend.title.size = 0.7,
+    legend.text.size = 0.6
+  )
+
+# Map 2 (AvgAsthmaRate)
+map2 <- tm_shape(treeCom2) +
+  tm_fill(col = "AvgAsthmaRate", style = "quantile") + 
+  tm_borders(col = "gray", lwd = 0.5) + 
+  tm_legend(outside = TRUE) +
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_layout(
+    title = "Average Asthma Rate by Community Area in Chicago",
+    legend.title.size = 0.7,
+    legend.text.size = 0.6
+  )
+
+# Map 3 (AvgNVDI)
+map3 <- tm_shape(treeCom2) +
+  tm_fill(col = "AvgNDVI", style = "quantile") + 
+  tm_borders(col = "gray", lwd = 0.5) + 
+  tm_legend(outside = TRUE) +
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_layout(
+    title = "Average NDVI by Community Area in Chicago",
+    legend.title.size = 0.7,
+    legend.text.size = 0.6
+  )
+
+tmap_arrange(map1, map2, map3)
+
+
+  
+
+
+```
+
+### Question 6
+
+What interesting trends did you find? Discuss in 1-2 paragraphs.
+
+From the first map, we can identify that AvgHardship is much greater in the central communities of Chicago compared to the Northern and Southern areas. With comparison to the other data, we can see that average hardship is in negative correlation with average asthma rate. The larger the value of AvgHardship, the smaller the value of AvgAsthmaRate. My initial hypothesis thought that it would have a positive correlation, as hardship may be in relation with less accessibility to medical supplies, hence average asthma rate might be higher in those areas. However, it may be a negative correlation because of undocumented data, migration and sampling bias. Firstly, communities with higher levels of asthma may have limited access to healthcare services, hence this could result in under diagnosed and under treatment of asthma, resulting in lower reported rates. Next, if individuals move out of areas with higher total hardship levels, it could lead to lower reported asthma rates. Finally, the data itself is not representative of the whole population, hence may affect the correlation between the two variables.
+
+Comparing the AvgHardship and AvgNDVI (Normalized Difference Vegetation Index), there clearly shows a negative correlation between the two queries. Areas with lower AvgHardship, indicates areas with high AvgNVDI, especially in the northern communities of Chicago. This relationship supports my hypothesis, as I initially thought that High AvgNVDI results in low Hardship, since lower hardship indicators often benefit from more accessibility to greener spaces, improved infrastructure and overall better quality of life. On the other hand, AvgNDVI and AvgAsthmaRate has a positive correlation. As AvgNDVI increases, there is also an increase in AvgAsthmaRate. This suggest that areas with higher vegetation density may experience higher rates of asthma. This association could be due to various factors, such as increased exposure to allergenic pollen in greener areas which might contribute to respiratory health issues.
+
+
+
+
+
+---
+
+
+Render your document by clicking on the "Knit" option in RStudio. Upload the .html file to your assignment submission!
+
+.
