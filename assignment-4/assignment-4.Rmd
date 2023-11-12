@@ -7,12 +7,15 @@ output: html_document
 
 ```{r include=FALSE}
 # load libraries
+library(raster)
 library(sf)
 library(dplyr)
 library(terra)
 library(tmap)
 library(data.table)
 library(tidyverse)
+library(sp)
+library(spatstat)
 ```
 
 
@@ -39,12 +42,27 @@ boundary <- boundary %>%
   select(-area, -perimeter, -comarea_id, -comarea)
 ```
 
-```{r include=FALSE}
+```{r include=TRUE}
 # Basic plot of traffic data on the boundary map
-tm_shape(boundary) +
-  tm_borders() +
-  tm_shape(traffic_sf) +
-  tm_dots(size = 0.5, col = "blue") +
-  tm_layout(title = "Traffic Data Visualization")
+tmap_mode("view")
+
+chitraffic <- tm_shape(boundary) + tm_borders(alpha = 0.4) +
+  
+  tm_shape(traffic_sf) + tm_dots(size = 0.01, col="black") +
+  
+  tm_layout(title="Average Daily Traffic Count in Chicago",
+            title.size = 0.75,
+            title.fontface = "bold") +
+  
+  tm_scale_bar(position = c("left", "bottom"))
+
+chitraffic
 ```
+
+
+
+
+
+
+
 
