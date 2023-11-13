@@ -5,8 +5,9 @@ date: "2023-11-10"
 output: html_document
 ---
 
-```{r include=FALSE}
-# load libraries
+## Environment Setup
+
+```{r include=TRUE, message=FALSE}
 library(raster)
 library(sf)
 library(dplyr)
@@ -19,96 +20,106 @@ library(spatstat)
 library(gstat)
 ```
 
+## Read and Inspect Data
 
-```{r include=FALSE}
-# load data
+```{r include=TRUE}
 traffic <- read_csv("traffic.csv", show_col_types = FALSE)
-boundary <- st_read("boundaries.geojson")
-```
-
-```{r include=FALSE}
-# convert traffic data spatially
-traffic <- st_as_sf(traffic, coords = c("Longitude", "Latitude"), crs = 4326)
-
-# ensure both are the same CRS
-boundary <- st_transform(boundary, crs = 4326)
-
+head(traffic)
 ```
 
 ```{r include=TRUE}
-# plot all traffic data on boundaries
+boundary <- st_read("boundaries.geojson")
+head(boundary)
+```
+<br>
+
+## Data Wrangling
+
+### Convert data to spatial formats
+
+```{r include=TRUE}
+traffic <- st_as_sf(traffic, coords = c("Longitude", "Latitude"), crs = 4326)
+```
+
+### Ensure both points and boundaries are the same CRS
+
+```{r include=TRUE}
+boundary <- st_transform(boundary, crs = 4326)
+```
+
+<br>
+
+## Visualizations
+
+### Average Daily Traffic Count in Chicago
+
+```{r include=TRUE}
 tmap_mode("view")
 
 chitraffic <- tm_shape(boundary) + tm_borders(alpha = 0.4) +
-  
   tm_shape(traffic) + tm_dots(size = 0.01, col="black", title="average traffic") +
-  
-  tm_layout(title="Average Daily Traffic Count in Chicago",
-            title.size = 0.75,
-            title.fontface = "bold") +
-  
   tm_scale_bar(position = c("left", "bottom"))
 
 chitraffic
 ```
+<br>
+
+
+### Total Passing Vehicle Volume in Chicago
+
 ```{r include=TRUE}
-# plot total passing vehicle volume on boundaries
 chivehicle <- tm_shape(boundary) + tm_borders() +
   tm_shape(traffic) + tm_dots(col="Total Passing Vehicle Volume", size = 0.1 , palette="Blues", n = 6, title="Total Passing Vehicles") +
-  
-  tm_layout(title="Total Passing Vehicle Volume in Chicago",
-            title.size = 0.75,
-            title.fontface = "bold") +
-  
   tm_scale_bar(position = c("left", "bottom"))
 
 chivehicle
 ```
 
+<br>
 
-```{r include=FALSE}
-# extract coordinates from sf object
-coords <- st_coordinates(traffic)
+## Kernel Density Estimation
 
-# define the observation window (bounding box) using the boundary data
-bbox <- st_bbox(boundary)
+For this assignment, I chose Kernel Density Estimation (KDE) as the point pattern analysis method. KDE is a non-parametric way to estimate the probability density function of a random variable, which in this analysis, is the spatial location of traffic events. This approach is particularly useful for visualizing the intensity of events across a region, which can help in identifying areas of high traffic concentration. These insights are valuable for urban planning, resource allocation, and traffic management.
+
+I utilized the default settings of the density() function from the spatstat package for the analysis. By default, this function typically uses a Gaussian kernel. The Gaussian kernel is chosen for its smooth, bell-shaped curve which decreases the influence of points with distance from the location of interest, providing a smooth gradient of intensity over the study area. This results in a continuous surface that is easy to interpret and visually appealing.The bandwidth (h parameter) in the KDE dictates the level of smoothing by controlling the spread of the kernel around each point. The default bandwidth for my lab was 0.0473.
+
+<br>
+
+
+### Creating a two-dimensional point-pattern object
+
+```{r include=TRUE, warning=FALSE}
+coords <- st_coordinates(traffic) # extract coordinates from sf object
+bbox <- st_bbox(boundary) # define the observation window (bounding box) using the boundary data
 window <- owin(xrange = bbox[c("xmin", "xmax")], yrange = bbox[c("ymin", "ymax")])
-
-# Create a ppp (two-dimensional point-pattern) object
-traffic.ppp <- ppp(coords[,1], coords[,2], window = window)
-
+traffic.ppp <- ppp(coords[,1], coords[,2], window = window) # Create a ppp (two-dimensional point-pattern) object
 ```
 
-```{r include=FALSE}
-
-# perform kernel density estimation
-kde <- density(traffic.ppp)
-
-# converting KDE back to raster form
-kde_raster <- raster(kde)
-
-# clip the KDE in raster form to chicago boundaries
-kde_raster_masked <- mask(kde_raster, boundary)
-
-```
-
-```{r include=FALSE}
-# check bandwith and kernel used
-str(kde)
-```
-
+### Perform Kernel Density Estimation
 
 ```{r include=TRUE}
-# plot kde with the chicago boundaries
-final_map <- tm_shape(boundary) + tm_borders() +
+kde <- density(traffic.ppp) # perform kernel density estimation
+kde_raster <- raster(kde) # converting KDE back to raster form
+kde_raster_masked <- mask(kde_raster, boundary) # clip the KDE in raster form to chicago boundaries
+```
+
+### Check bandwith and type of kernel
+
+```{r include=TRUE}
+str(kde) 
+```
+
+<br>
+
+## Kernel Density Estimation on Traffic in Chicago
+
+```{r include=TRUE, warning=FALSE}
+chikde <- tm_shape(boundary) + tm_borders() +
   tm_shape(kde_raster_masked) +
   tm_raster(title="Traffic Density", style="cont", palette="Blues") +
-  tm_layout(title="Traffic Density in Chicago",
-            title.size = 0.75,
-            title.fontface = "bold") +
   tm_scale_bar(position = c("left", "bottom"))
 
-final_map
+chikde
 ```
 
 
