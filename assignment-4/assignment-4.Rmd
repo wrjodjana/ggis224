@@ -39,12 +39,12 @@ boundary <- boundary %>%
   select(-area, -perimeter, -comarea_id, -comarea)
 ```
 
-```{r include=FALSE}
+```{r include=TRUE}
 # Basic plot of traffic data on the boundary map
 tm_shape(boundary) +
   tm_borders() +
   tm_shape(traffic_sf) +
-  tm_dots(size = 0.5, col = "blue") +
+  tm_dots(size = 0.01, col = "blue") +
   tm_layout(title = "Traffic Data Visualization")
 ```
 
