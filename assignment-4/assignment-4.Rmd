@@ -23,7 +23,7 @@ library(gstat)
 ## Read and Inspect Data
 
 ```{r include=TRUE}
-traffic <- read_csv("traffic.csv", show_col_types = FALSE)
+traffic <- fread("traffic.csv")
 head(traffic)
 ```
 
@@ -39,6 +39,8 @@ head(boundary)
 
 ```{r include=TRUE}
 traffic <- st_as_sf(traffic, coords = c("Longitude", "Latitude"), crs = 4326)
+
+traffic
 ```
 
 ### Ensure both points and boundaries are the same CRS
