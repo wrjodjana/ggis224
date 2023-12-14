@@ -1,0 +1,130 @@
+---
+title: "Assignment 4"
+author: "Warren Jodjana"
+date: "2023-11-10"
+output: html_document
+---
+
+## Environment Setup
+
+```{r include=TRUE, message=FALSE}
+library(raster)
+library(sf)
+library(dplyr)
+library(terra)
+library(tmap)
+library(data.table)
+library(tidyverse)
+library(sp)
+library(spatstat)
+library(gstat)
+```
+
+## Read and Inspect Data
+
+```{r include=TRUE}
+traffic <- fread("traffic.csv")
+head(traffic)
+```
+
+```{r include=TRUE}
+boundary <- st_read("boundaries.geojson")
+head(boundary)
+```
+<br>
+
+## Data Wrangling
+
+### Convert data to spatial formats
+
+```{r include=TRUE}
+traffic <- st_as_sf(traffic, coords = c("Longitude", "Latitude"), crs = 4326)
+
+traffic
+```
+
+### Ensure both points and boundaries are the same CRS
+
+```{r include=TRUE}
+boundary <- st_transform(boundary, crs = 4326)
+```
+
+<br>
+
+## Visualizations
+
+### Average Daily Traffic Count in Chicago
+
+```{r include=TRUE}
+tmap_mode("view")
+
+chitraffic <- tm_shape(boundary) + tm_borders(alpha = 0.4) +
+  tm_shape(traffic) + tm_dots(size = 0.01, col="black", title="average traffic") +
+  tm_scale_bar(position = c("left", "bottom"))
+
+chitraffic
+```
+<br>
+
+
+### Total Passing Vehicle Volume in Chicago
+
+```{r include=TRUE}
+chivehicle <- tm_shape(boundary) + tm_borders() +
+  tm_shape(traffic) + tm_dots(col="Total Passing Vehicle Volume", size = 0.1 , palette="Blues", n = 6, title="Total Passing Vehicles") +
+  tm_scale_bar(position = c("left", "bottom"))
+
+chivehicle
+```
+
+<br>
+
+## Kernel Density Estimation
+
+For this assignment, I chose Kernel Density Estimation (KDE) as the point pattern analysis method. KDE is a non-parametric way to estimate the probability density function of a random variable, which in this analysis, is the spatial location of traffic events. This approach is particularly useful for visualizing the intensity of events across a region, which can help in identifying areas of high traffic concentration. These insights are valuable for urban planning, resource allocation, and traffic management.
+
+I utilized the default settings of the density() function from the spatstat package for the analysis. By default, this function typically uses a Gaussian kernel. The Gaussian kernel is chosen for its smooth, bell-shaped curve which decreases the influence of points with distance from the location of interest, providing a smooth gradient of intensity over the study area. This results in a continuous surface that is easy to interpret and visually appealing.The bandwidth (h parameter) in the KDE dictates the level of smoothing by controlling the spread of the kernel around each point. The default bandwidth for my lab was 0.0473.
+
+<br>
+
+
+### Creating a two-dimensional point-pattern object
+
+```{r include=TRUE, warning=FALSE}
+coords <- st_coordinates(traffic) # extract coordinates from sf object
+bbox <- st_bbox(boundary) # define the observation window (bounding box) using the boundary data
+window <- owin(xrange = bbox[c("xmin", "xmax")], yrange = bbox[c("ymin", "ymax")])
+traffic.ppp <- ppp(coords[,1], coords[,2], window = window) # Create a ppp (two-dimensional point-pattern) object
+```
+
+### Perform Kernel Density Estimation
+
+```{r include=TRUE}
+kde <- density(traffic.ppp) # perform kernel density estimation
+kde_raster <- raster(kde) # converting KDE back to raster form
+kde_raster_masked <- mask(kde_raster, boundary) # clip the KDE in raster form to chicago boundaries
+```
+
+### Check bandwith and type of kernel
+
+```{r include=TRUE}
+str(kde) 
+```
+
+<br>
+
+## Kernel Density Estimation on Traffic in Chicago
+
+```{r include=TRUE, warning=FALSE}
+chikde <- tm_shape(boundary) + tm_borders() +
+  tm_shape(kde_raster_masked) +
+  tm_raster(title="Traffic Density", style="cont", palette="Blues") +
+  tm_scale_bar(position = c("left", "bottom"))
+
+chikde
+```
+
+
+
+
+
