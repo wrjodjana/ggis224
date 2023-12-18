@@ -1,21 +1,84 @@
 ---
-title: "GGIS 224 Environmental Data Science Assignment 2"
+title: "GGIS 224 Assignment 2"
 author: "Warren Jodjana"
-date: "2023-09-29"
+date: "2023-10-02"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = TRUE)
 ```
 
-```{}
+Setup Directory
 
+```{r directory}
+setwd("~/GGIS 224/assignment-2")
+```
 
+Load Libraries
+
+```{r libraries}
+library(sf)
+library(tmap)
+library(dplyr)
+```
+
+Data Sources
+- Boston Public Schools
+- Boston Open Spaces
+```{r data}
+boston_schools <- st_read("~/GGIS 224/assignment-2/public-schools/Public_Schools.shp")
+boston_spaces <- st_read("~/GGIS 224/assignment-2/open-space/open_space.shp")
+```
+
+Filtering Data
+```{r filtering}
+boston_parks <- boston_spaces %>%
+  filter(TypeLong == "Parks, Playgrounds & Athletic Fields", OWNERSHIP == "City of Boston") %>% # filter to only the City of Boston and only Parks
+  select(-c(ZonAgg, TypeLong, POS, PA, ALT_NAME, AgncyJuris, OS_ID, OS_Own_Jur, OS_Mngmnt)) 
+
+boston_schfiltered <- boston_schools %>%
+  select(-c(SHARED, COMPLEX, OBJECTID))
 
 ```
 
+Creating a buffer around Boston Public Schools Location.
 
+In this shape, a buffer is created within Boston Public Schools to visualize areas within 1000 meters from each school. This information can be valuable for assessing the accessibility of parks to these public schools. By visualizing school buffers, we can identify what parts of the city fall within a walking or commuting distance of the school. This information can be useful for city planners and transportation authorities to determine where additional recreational areas or green spaces may be needed, especially in areas with limited access to parks. It can also inform decisions about school bus routes and pedestrian safety measures to ensure that students have conveninent and safe access to open spaces for physical activities.
 
+```{r buffers}
+school_buffer <- st_buffer(boston_schfiltered, dist = 1000)
+
+tm_shape(school_buffer) +
+  tm_borders(col = 'red') +
+  tm_shape(boston_parks) +
+  tm_borders(col = 'blue')
+```
+
+Calculating the centroids of Boston Parks Polygons
+
+In this shape, centroids were calculated for Boston Parks (boston_parks), providing central points within each space. The centroids can be beneficial for various analysis, including finding the nearest school within each open space. Centroids are used to represent the approximate "center of gravity" of polygonal features. Knowing the centroids of open spaces provides city planners with the ability to evaluate how parks are spread across the city and pinpoint any gaps or areas that might require extra green infrastructure. Additionally, by knowing the centroid of each park, city officials can determine which public schools are in proximity to these points, helping to identify schools that are centrally located with respect to open spaces. This information is valuable for school zoning and planning decisions, as it can impact school attendance and recreational programming.
+
+```{r centroids}
+centroids <- st_centroid(boston_parks)
+
+tm_shape(boston_parks) +
+  tm_borders() +
+  tm_shape(centroids) +
+  tm_dots(col = 'purple', size = 0.1)
+```
+
+Perform a spatial join between Boston Public Schools and Boston Parks
+
+Spatial join combines the two data sets of boston public schools (boston_sch_filtered) and boston parks (boston_parks). In this case, we want to understand what are the proximity of schools in Bostons to open spaces in the city, particularly parks. The spatial join is also important for the allocation of resources and urban planning of the city. In essence, it helps city officials and other educators to identify schools that have easier accessibility to green spaces, which can overall have a positive impact on students' well-being. By mapping schools within parks, decision-makers can better plan school facilities, recreational areas and outdoor educational programs to promote a healthier lifestyle for students.
+
+```{r spatial}
+joined_data <- st_join(boston_schfiltered, boston_parks)
+
+tm_shape(boston_parks) +
+  tm_borders() +
+  tm_shape(joined_data) +
+  tm_symbols(col = 'green', size = 0.5)
+```
 
 

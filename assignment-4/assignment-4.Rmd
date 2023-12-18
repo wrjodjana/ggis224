@@ -40,7 +40,7 @@ head(boundary)
 ```{r include=TRUE}
 traffic <- st_as_sf(traffic, coords = c("Longitude", "Latitude"), crs = 4326)
 
-traffic
+data.table(traffic)
 ```
 
 ### Ensure both points and boundaries are the same CRS
@@ -123,6 +123,7 @@ chikde <- tm_shape(boundary) + tm_borders() +
 
 chikde
 ```
+
 
 
 
